@@ -1,0 +1,23 @@
+Here, I do two maps and reduces.
+First we do the join action of 2 files:
+Map<key 1,value 1>--><key 2,value 2>
+key 1 and value 1 are input of original txt file.
+key 2=city name 
+value 2=type+point  
+note: when type is “A”, then point(x,y) belongs to file Cities_Locations.txt 
+then the relation type is 2,else is 1)
+
+Reduce<key 2,value 2>--><key 3,value 3>
+we do JOIN step,in map step, we go <city,type + point>,if type =A,it belongs to customers location point,if type =B,it is real city location.
+key 3=city
+value 3= customer's location point(x,y) + city location point(x1,y1).
+
+
+After the first step, we need do count step:
+Map<key 1,value 1>--><key 2,value 2>
+key 1 and value 1 are the output file of the first step.
+key 2=city    value 2=one  
+if the distance between customer's location point(x,y) and city location point city location point(x1,y1) is less than 5000, we input <city, one>
+Reduce<key 2,value 2>--><key 3,value 3>
+we count the number of qualified customers in each city.
+key 3 is city, and key 4 is sum  

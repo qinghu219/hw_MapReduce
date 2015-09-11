@@ -1,0 +1,232 @@
+
+
+ public class WordCount1 { 
+     public static int time = 0; 
+public static class Map extends Mapper<Object, Text, Text, Text> { 
+
+      public void map(Object key, Text value, Context context) 
+
+                throws IOException, InterruptedException { 
+
+        	String line = value.toString();
+            String relationtype=new String();
+            String mapkey = new String(); 
+            String mapvalue = new String(); 
+            int i = 0; 
+            StringTokenizer tokenizer = new StringTokenizer(line,"\n");
+            while (tokenizer.hasMoreTokens()) {
+                StringTokenizer tokenizerLine = new StringTokenizer(tokenizer.nextToken(), ",", false);
+                String strName = tokenizerLine.nextToken();
+                if (strName.charAt(1) >= '0' && strName.charAt(1) <= '9') {
+                    type = “A”;
+                } else {
+                    type = “B”;
+                }
+      
+ 
+                String city = tokenizerLine.nextToken();
+                String x = tokenizerLine.nextToken();
+                String y = tokenizerLine.nextToken();
+                
+                Text x1=new Text(x);
+                Text y1=new Text(y);
+                Text City = new Text(city);
+                context.write(City, new Text(type + "," + x1+","+y1));
+            }
+        }
+    }
+
+
+    public static class Reduce extends Reducer<Text, Text, Text, Text> { 
+
+ 
+
+        
+
+        public void reduce(Text key, Iterable<Text> values, Context context) 
+
+                throws IOException, InterruptedException { 
+
+ 
+        	   int citynum = 0;
+               String[] city = new String[1000000];
+               int addressnum = 0;
+               String[] address = new String[1];
+               Iterator ite = values.iterator(); 
+               while (ite.hasNext()) {
+                   String record = ite.next().toString();
+
+                   int len = record.length();
+                   int i = 2;
+                   if (0 == len) {
+                       continue;
+                   }
+                   char type = record.charAt(0);
+                   if (‘A’ == type) {
+                       city[citynum] = record.substring(i);
+                       citynum++;
+                   }
+                   if (‘B’ == type) {
+                       address[addressnum] = record.substring(i);
+                       addressnum++;
+                   }
+               }
+               if (0 != citynum && 0 != addressnum) {
+
+                   for (int m = 0; m < citynum; m++) {
+
+                       for (int n = 0; n < addressnum; n++) {
+
+                           
+
+                           context.write(key,new Text(","+ new Text(city[m])+","+ new Text(address[n])));
+
+                       }
+
+
+
+                   }
+
+               }
+           }
+       }
+ 
+
+    public static void main(String[] args) throws Exception { 
+
+        Configuration conf = new Configuration(); 
+
+      
+
+        conf.set("mapred.job.tracker", "localhost:9001"); 
+
+        String[] ioArgs = new String[] { "In", "out" }; 
+
+        String[] otherArgs = new GenericOptionsParser(conf, ioArgs).getRemainingArgs(); 
+
+        if (otherArgs.length != 2) { 
+
+            System.err.println("Usage: Multiple Table Join <in> <out>"); 
+
+            System.exit(2); 
+
+        } 
+
+ 
+
+        Job job = new Job(conf, "Multiple Table Join"); 
+
+        job.setJarByClass(Countnum.class); 
+
+        job.setMapperClass(Map.class); 
+
+        job.setReducerClass(Reduce.class); 
+  
+        job.setOutputKeyClass(Text.class); 
+
+        job.setOutputValueClass(Text.class); 
+
+
+        FileInputFormat.addInputPath(job, new Path(otherArgs[0])); 
+
+        FileOutputFormat.setOutputPath(job, new Path(otherArgs[1])); 
+
+        System.exit(job.waitForCompletion(true) ? 0 : 1); 
+
+    } 
+
+}
+
+
+
+public class WordCount2{
+
+    public static class Map extends MapReduceBase implements Mapper<LongWritable, Text, Text, IntWritable> {
+        private final static IntWritable one = new IntWritable(1);
+        private final static IntWritable zero = new IntWritable(0);
+        private Text word = new Text();
+
+        public void map(LongWritable key, Text value, OutputCollector<Text, IntWritable> output, Reporter reporter) throws IOException {
+
+        	String line = value.toString();
+            String relationtype=new String();
+            String mapkey = new String(); 
+            String mapvalue = new String(); 
+            int i = 0; 
+            StringTokenizer tokenizer = new StringTokenizer(line,"\n");
+            while (tokenizer.hasMoreTokens()) {
+                StringTokenizer tokenizerLine = new StringTokenizer(tokenizer.nextToken(), ",", false);
+                String city = tokenizerLine.nextToken();
+                String x = tokenizerLine.nextToken();
+                String y = tokenizerLine.nextToken();
+                String x1 = tokenizerLine.nextToken();
+                String y1 = tokenizerLine.nextToken();
+                Float fx=new Float(x);
+                Float fy=new Float(y);
+                Float fx1=new Float(x1);
+                Float fy1=new Float(y1);
+                if(Math.sqrt((fx1-fx)*(fx1-fx)+(fy1-fy)*(fy1-fy))<5){
+                	 Text City = new Text(city);	
+                	 output.collect(City, one);
+                }
+                else{
+                	 Text City = new Text(city);	
+                	 output.collect(City,zero);
+                }
+    
+               
+            }
+        }
+    }
+
+    public static class Reduce extends MapReduceBase implements Reducer<Text, IntWritable, Text, IntWritable> {
+        public void reduce(Text key, Iterator<IntWritable> values, OutputCollector<Text, IntWritable> output, Reporter reporter) throws IOException {
+            int sum = 0;
+            while (values.hasNext()) {
+                sum += values.next().get();
+            }
+            output.collect(key, new IntWritable(sum));
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        JobConf conf = new JobConf(Count.class);
+        conf.setJobName("wordcount");
+
+        conf.setOutputKeyClass(Text.class);
+        conf.setOutputValueClass(IntWritable.class);
+
+        conf.setMapperClass(Map.class);
+        conf.setCombinerClass(Reduce.class);
+        conf.setReducerClass(Reduce.class);
+
+        conf.setInputFormat(TextInputFormat.class);
+        conf.setOutputFormat(TextOutputFormat.class);
+
+        FileInputFormat.setInputPaths(conf, new Path(args[0]));
+        FileOutputFormat.setOutputPath(conf, new Path(args[1]));
+
+        JobClient.runJob(conf);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 

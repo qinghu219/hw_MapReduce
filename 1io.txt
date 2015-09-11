@@ -1,0 +1,8 @@
+firstly we input LikeReviews.txt
+Map:<key1,value1>-->List<key2,value 2>
+key1 and value 1 are original input file.key is LongWritable and value is Text.
+In the map function, I just need to get the first word in every line. so key2=customer id,  and value2 is one.
+
+List<key2,value2>--><key 3,value 3>
+key 3=customers id   type:Text
+value 3=sum of reviews liked.
